@@ -18,7 +18,7 @@ app.get('/health', (req, res) => {
 
 app.use((req, res) => {
     res.status(404).json({
-        message: 'Routes not found'
+        message: 'Route not found'
     })
 })
 

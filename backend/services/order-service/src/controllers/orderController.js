@@ -1,42 +1,42 @@
 const Order = require('../models/Order')
 const axios = require('axios')
 
-const placeOrder = async(req, res) => {
-    try  {
-        const {listingId, quantity, offeredPricePerUnit, note, deliveryCity, deliveryLat, deliveryLng} =req.body
+const placeOrder = async (req, res) => {
+    try {
+        const { listingId, quantity, offeredPricePerUnit, note, deliveryCity, deliveryLat, deliveryLng } = req.body
 
-        if(!listingId || !quantity || !offeredPricePerUnit){
+        if (!listingId || !quantity || !offeredPricePerUnit) {
             return res.status(400).json({
                 message: 'Please fill all required fields'
             })
         }
 
-        let listing 
-        try{
+        let listing
+        try {
             const response = await axios.get(
                 `${process.env.LISTING_SERVICE_URL}/api/listings/${listingId}`
             )
 
             listing = response.data
-        } catch(error) {
+        } catch (error) {
             res.status(404).json({
                 message: 'Listing not found'
             })
         }
-        if(listing.status !== 'active') {
+        if (listing.status !== 'active') {
             return res.status(400).json({
                 message: 'Listing no longer available'
             })
         }
 
-        if(listing.farmer.id == req.user._id.toString()){
+        if (listing.farmer.id == req.user._id.toString()) {
             return res.status(400).json({
                 message: 'You cannot order your own listing'
             })
         }
 
         const totalAmount = quantity * offeredPricePerUnit
-        
+
         const order = await Order.create({
             listing: {
                 id: listing._id,
@@ -47,7 +47,7 @@ const placeOrder = async(req, res) => {
             },
             farmer: {
                 id: listing.farmer.id,
-                name:listing.farmer.name,
+                name: listing.farmer.name,
                 phone: listing.farmer.phone,
             },
             buyer: {
@@ -60,7 +60,7 @@ const placeOrder = async(req, res) => {
             offeredPricePerUnit,
             totalAmount,
             note: note || null,
-            deliveryLocation :{
+            deliveryLocation: {
                 city: deliveryCity || null,
                 coordinates: {
                     lat: deliveryLat || null,
@@ -80,37 +80,171 @@ const getOrderById = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id)
 
-        if(!order) {
+        if (!order) {
             return res.status(404).json({
                 message: 'Order not found'
             })
         }
 
         const isInvolved = order.buyer.id === req.user._id.toString() || order.farmer.id === req.user._id.toString()
-        if(!isInvolved){
+        if (!isInvolved) {
             return res.status(403).json({
                 message: 'Not Authorized'
             })
         }
 
         res.status(200).json(order)
-    } catch(error){
+    } catch (error) {
         res.status(500).json({
-            message:'Server error', error: error.message
+            message: 'Server error', error: error.message
         })
     }
-} 
+}
 
 const acceptOrder = async (req, res) => {
-    try{
+    try {
         const order = await Order.findById(req.params.id)
 
-        if(!order) {
+        if (!order) {
             return res.status(404).json({
                 message: 'Order not found'
             })
         }
 
-        if(order.farmer.id  !== req.user._id to)
+        if (order.farmer.id !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: 'Only farmer can accept this order'
+            })
+        }
+
+        if (order.status !== 'pending') {
+            return res.status(400).json({
+                message: `Order is already ${order.status}`
+            })
+        }
+
+        order.status = 'accepted'
+        await order.save()
+
+        res.status(200).json({
+            message: 'Order accepted', order
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error', error: error.message
+        })
     }
 }
+
+const getMyOrders = async (req, res) => {
+    try {
+        const { role } = req.user
+        const { status, page = 1, limit = 1 } = req.query
+
+        let filter = {}
+
+        if (role === 'buyer') {
+            filter['buyer.id'] = req.user._id.toString()
+        } else if (role === 'farmer') {
+            filter['farmer.id'] = req.user._id.toString()
+        } else {
+            return res.status(403).json({
+                message: 'Access denied'
+            })
+        }
+
+        if (status) filter.status = status
+
+        const skip = (Number(page) - 1) * Number(limit)
+        const total = await Order.countDocuments(filter)
+        const orders = await Order.find(filter)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+
+        res.status(200).json({
+            total,
+            page: Number(page),
+            pages: Math.ceil(total / Number(limit))
+        })
+
+    } catch (err) {
+        return res.status(500).json({
+            message: 'Server error', error: err.message
+        })
+    }
+}
+
+const rejectOrder = async (req, res) => {
+    try {
+        const { rejectionReason } = req.body
+        const order = await Order.findById(req.params.id)
+
+        if (!order) {
+            return res.status(404).json({
+                message: 'Order not found'
+            })
+        }
+
+        if (order.farmer.id !== req.user._id.toString()) {
+            return res.status(403).json({
+                Message: 'Only farmer can reject this order'
+            })
+        }
+
+        if (order.status !== 'pending') {
+            return res.status(400).json({
+                message: `Order is already ${order.status}`
+            })
+        }
+
+        order.status = 'rejected'
+        order.rejectionReason = rejectionReason || null
+        await order.save()
+
+        res.status(200).json({
+            message: 'Order rejected', order
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+const cancelOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id)
+
+        if (!order) {
+            return res.status(404).json({
+                message: 'Order not found'
+            })
+        }
+
+        if (order.buyer.id !== req.user._id.toString()){
+            return res.status(403).status({
+                message: 'Only buyer can cancel this order'
+            })
+        }
+
+        if (order.status !== 'pending'){
+            return res.status(400).status({
+                message: 'Only pending orders can be cancelled'
+            })
+        }
+
+        order.status = 'cancelled'
+        await order.save()
+
+        res.status(200).json({
+            message: 'Order cancelled', order
+        })
+    } catch (err) {
+        return res.status(500).json({
+            message: 'Server error', error: err.message
+        })
+    }
+}
+
+module.exports = { placeOrder, getMyOrders, getOrderById, acceptOrder, rejectOrder, cancelOrder}
