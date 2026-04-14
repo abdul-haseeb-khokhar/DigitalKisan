@@ -6,15 +6,14 @@ const protect = async (req, res, next) => {
     if(req.headers.authorization && req.headers.authorization.startsWith('Bearer ')){
         try{
             token = req.headers.authorization.split(' ')[1]
-
-            const reponse = await axios.get(`${process.env.USER_SERVICE_URL}/api/auth/getMe`,{
+            const response = await axios.get(`${process.env.USER_SERVICE_URL}/api/auth/get`,{
                 headers: {Authorization : `Bearer ${token}`},
             })
-
             req.user = response.data
 
             next()
         } catch (error){
+            console.error(error)
             return res.status(401).json({
                 message: 'Invalid or expired token'
             })

@@ -3,6 +3,9 @@ const axios = require('axios')
 
 const placeOrder = async (req, res) => {
     try {
+        console.log(
+            "placeOrder function is called"
+        )
         const { listingId, quantity, offeredPricePerUnit, note, deliveryCity, deliveryLat, deliveryLng } = req.body
 
         if (!listingId || !quantity || !offeredPricePerUnit) {
@@ -78,6 +81,7 @@ const placeOrder = async (req, res) => {
 
 const getOrderById = async (req, res) => {
     try {
+        console.log("getOrderById func is called")
         const order = await Order.findById(req.params.id)
 
         if (!order) {
@@ -103,6 +107,7 @@ const getOrderById = async (req, res) => {
 
 const acceptOrder = async (req, res) => {
     try {
+        console.log("acceptOrder function is called")
         const order = await Order.findById(req.params.id)
 
         if (!order) {
@@ -138,6 +143,7 @@ const acceptOrder = async (req, res) => {
 
 const getMyOrders = async (req, res) => {
     try {
+        console.log('getMyOrders func is called')
         const { role } = req.user
         const { status, page = 1, limit = 1 } = req.query
 
@@ -177,6 +183,7 @@ const getMyOrders = async (req, res) => {
 
 const rejectOrder = async (req, res) => {
     try {
+        console.log("rejectOrder func is called")
         const { rejectionReason } = req.body
         const order = await Order.findById(req.params.id)
 
@@ -214,6 +221,7 @@ const rejectOrder = async (req, res) => {
 
 const cancelOrder = async (req, res) => {
     try {
+        console.log("cancelOrder function is called")
         const order = await Order.findById(req.params.id)
 
         if (!order) {
