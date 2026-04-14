@@ -128,7 +128,7 @@ const updateListing = async (req, res) => {
             if(req.body[field] !== undefined) listing[field] = req.body[field]
         })
 
-        if(req.body.cit || req.body.lat || req.body.lng){
+        if(req.body.city || req.body.lat || req.body.lng){
             listing.location = {
                 city: req.body.city || listing.location.city,
                 coordinates: {
