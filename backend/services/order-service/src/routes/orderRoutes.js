@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const {placeOrder, getMyOrders, getOrderById, acceptOrder, rejectOrder, cancelOrder} = require('../controllers/orderController')
+const {placeOrder, getMyOrders, getOrderById, acceptOrder, rejectOrder, cancelOrder, updateOrderStatus} = require('../controllers/orderController')
 const { protect, restrictTo } = require('../middleware/authMiddleware')
 
 
@@ -11,5 +11,6 @@ router.get('/:id', protect, getOrderById)
 router.patch('/:id/accept',protect, restrictTo('farmer'), acceptOrder)
 router.patch('/:id/reject',protect, restrictTo('farmer'), rejectOrder)
 router.patch('/:id/cancel', protect, restrictTo('buyer'), cancelOrder)
-
+router.patch('/:id/paid', protect, updateOrderStatus)
+router.patch('/:id/completed', protect, updateOrderStatus)
 module.exports = router
