@@ -85,14 +85,203 @@ const initiatePayment = async(req, res) => {
                 transaction,
             })
 
-            res.status(201).json({
-                message: 'Payment initiated',
-                transaction,
-            })
         }
+
+        res.status(201).json({
+            message: 'Payment initiated',
+            transaction,
+        })
     } catch (error) {
         res.status(500).json({
             message: 'Server error', error: error.message
         })
     }
+}
+
+const paymentCallback = async (req, res) => {
+    try {
+        const {orderId, gatewayTransactionId, status, gatewayResponse} = req.body
+
+        const transaction = await Transaction.findOne({ orderId })
+        if(!transaction) {
+            return res.status(404).json({
+                message: 'Transaction not found'
+            })
+        }
+
+        if( status === 'success') {
+            transaction.status = 'held'
+            transaction.gatewayTransactionId =  gatewayTransactionId
+            transaction.gatewayResponse = gatewayResponse || null
+
+            await transaction.save()
+
+            await axios.patch( `${process.env.ORDER_SERVICE_URL}/api/orders/${orderId}/paid`,{},
+                {headers: {Authorization : `Bearer internal`}}
+            )
+
+            return res.status(200).json({
+                message: 'Payment Confirmed. Funds held in escrow'
+            })
+        }
+
+        transaction.status = 'failed'
+        transaction.gatewayResponse = gatewayResponse || null
+        await transaction.save()
+
+        res.status(200).json({
+            message: 'Payment Failed'
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+const confirmDelivery = async (req, res) => {
+    try{
+        const transaction = await Transaction.findById(req.params.id)
+
+        if(!transaction) {
+            return res.status(404).json({
+                message: 'Transaction not found'
+            })
+        }
+
+        if(transaction.buyer.id !== req.user._id.toString()){
+            return res.status(403).json({
+                message: 'Only the buyer can confirm deleivery'
+            })
+        }
+
+        if(transaction.status !== 'held'){
+            return res.status(400).json({
+                message: 'Funds are not in escrow'
+            })
+        }
+
+        transaction.status = 'released'
+        transaction.releasedAt = new Date()
+        await transaction.save()
+
+        await axios.patch(
+            `${process.env.ORDER_SERVICE_URL}/api/orders/completed`,{},{
+                headers: {Authorization: req.headers.authorization}
+            }
+        )
+
+        res.status(200).json({
+            message: 'Delivery confirmed. Funds released to farmer.',
+            farmerAmount: transaction.farmerAmount,
+            platformFee: transaction.platformFee,
+            transaction,
+        })
+    } catch (error){
+        return res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+const raiseDispute = async (req, res) => {
+    try {
+        const {disputeReason} = req.body
+        const transaction = await Transaction.findById(req.params.id)
+
+        if(!transaction) {
+            return res.status(404).json({
+                message: 'Transaction not found'
+            })
+        }
+
+        if(transaction.buyer.id !== req.user._id.toString()){
+            return res.status(403).json({
+                message: 'Only the buyer can raise a dispute'
+            })
+        }
+
+        if(transaction.status !== 'held'){
+            return res.status(400).json({
+                message: 'Can only dispute held transactions'
+            })
+        }
+
+        if(!disputeReason){
+            return res.status(400).json({
+                message: 'Please provide a dispute reason'
+            })
+        }
+
+        transaction.status = 'disputed'
+        transaction.disputeReason = disputeReason
+        await transaction.save()
+
+        res.status(200).json({
+            message: 'Dispute raised. Admin will review shortly',
+            transaction,
+        })
+    }   catch (error) {
+        return res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+const getTransactionById = async (req, res) => {
+    try{
+        const transaction = await Transaction.findById(req.params.id)
+
+        if(!transaction){
+            return res.status(404).json({
+                message: 'Transaction not found'
+            })
+        }
+
+        const isInvolved = transaction.buyer.id === req.user._id.toString() || transaction.farmer.id === req.user._id.toString()
+
+        if(!isInvolved){
+            return res.status(403).json({
+                message: 'Not authorized'
+            })
+        }
+
+        res.status(200).json(transaction)
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error', error : error.message
+        })
+    }
+}
+
+const getTransactionByOrderId = async (req, res) => {
+    try {
+        const transaction = await Transaction.findOne({
+            orderId: req.params.orderId,
+        })
+
+        if(!transaction) {
+            return res.status(404).json({
+                message: 'Transaction not found'
+            })
+        }
+
+        const isInvolved = transaction.buyer.id === req.user._id.toString() || transaction.farmer.id === req.user._id.toString()
+
+        if(!isInvolved){
+            return res.status(403).json({
+                message: 'Not authorized'
+            })
+        }
+
+        res.status(200).json(transaction)
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+module.exports = {
+    initiatePayment, paymentCallback, confirmDelivery, raiseDispute, getTransactionById, getTransactionByOrderId
 }
