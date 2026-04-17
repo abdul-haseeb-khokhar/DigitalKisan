@@ -29,7 +29,7 @@ const transportJobSchema = new mongoose.Schema({
         unit: {type: String, required: true},
         weightEstimate: {type: Number, default: null},
     },
-    pickUp : {
+    pickup : {
         city: {type: String, required: true},
         adress: {type: String, default: null},
         coordinates: {
@@ -37,7 +37,7 @@ const transportJobSchema = new mongoose.Schema({
             lng: {type: String, default: null},
         },
     },
-    dropOff:{
+    dropoff:{
         city:{type: String, required: true},
         adress: {type: String, default: null},
         coordinates: {
