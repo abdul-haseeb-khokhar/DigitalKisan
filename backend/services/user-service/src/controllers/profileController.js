@@ -82,4 +82,111 @@ const updateFcmToken = async(req, res) => {
     }
 }
 
-module.exports = { updateProfile, getUserById, updateFcmToken }
+const getAllUsers = async(req, res) => {
+    try{
+        const {
+            role, page= 1, limit = 1
+        }  = req.body
+
+        const filter = {}
+        if(role) filter.role = role
+
+        const skip = (Number(page) -1) * Number(limit)
+        const total = await User.countDocuments(filter)
+        const users = await User.find(filter)
+            .select('-password -fcmToken')
+            .sort({createdAt: -1})
+            .skip(skip)
+            .limit(Number(limit))
+
+        res.status(200).json({
+            total, page: Number(page), pages: Math.ceil(total/Number(limit)),
+            users,
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+const banUser = async(req, res) => {
+    try{
+        const user = await User.findById(req.params.id)
+        if(!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        if(user.isBanned) {
+            return res.status(400).json({
+                message: 'User is alread banned'
+            })
+        }
+
+        user.isBanned = true
+        await user.save()
+
+        res.status(200).json({
+            message: 'User banned successfully'
+        })
+    } catch (error) {
+        res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+
+const unbanUser = async (req, res) => {
+    try{
+        const user = await User.findById(req.params.id)
+        if(!user){
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        if(!user.isBanned) {
+            return res.status(400).json({
+                message: 'User is not banned'
+            })
+        }
+
+        user.isBanned = false
+        await user.save()
+
+        res.status(200).json({
+            message: 'User is unbanned successfully'
+        })
+    } catch (error) {
+        res.status(500).json({
+            message:'Server error', error: error.message
+        })
+    }
+}
+
+const verifyUser = async (req, res) => {
+    try{
+        const user = await User.findById(req.params.id)
+        if(!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            })
+        }
+
+        if(user.isVerified) {
+            return res.status(400).json({
+                message: 'User is already verified'
+            })
+        }
+
+        user.isVerified = true
+        await user.save()
+    } catch( error ){
+        res.status(500).json({
+            message: 'Server error', error: error.message
+        })
+    }
+}
+module.exports = { updateProfile, getUserById, updateFcmToken, getAllUsers, banUser, unbanUser, verifyUser, }
