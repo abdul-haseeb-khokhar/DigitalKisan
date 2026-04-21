@@ -2,13 +2,14 @@ const express = require('express')
 const cors = require('cors')
 
 const orderRoutes = require('./routes/orderRoutes')
-
+const adminOrderRoutes = require('./routes/adminOrderRoutes')
 const app = express()
 app.use(cors())
 
 app.use(express.json())
 
 app.use('/api/orders', orderRoutes)
+app.use('/api/admin/orders', adminOrderRoutes)
 
 app.get('/health', (req, res) => {
     res.status(200).json({
