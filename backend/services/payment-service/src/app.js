@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors')
-
+const adminPaymentRoutes = require('./routes/adminPaymentRoutes')
 const paymentRoutes = require('./routes/paymentRoutes')
 const app = express()
 
@@ -8,6 +8,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use('/api/payments', paymentRoutes)
+app.use('/api/admin/payments', adminPaymentRoutes)
 
 app.get('/health', (req, res)=> {
     return res.status(200).json({
