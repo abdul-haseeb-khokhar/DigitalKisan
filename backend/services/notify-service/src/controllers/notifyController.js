@@ -46,7 +46,7 @@ const sendNotification = async (req, res) => {
     }
 }
 
-const getMyNotification = async (req, res) => {
+const getMyNotifications = async (req, res) => {
     try{
         const {page = 1, limit = 20, unreadOnly} = req.query
         const filter = {'recipient.id': req.user._id.toString()}
@@ -186,4 +186,4 @@ const broadcast = async(req, res) => {
     }
 }
 
-module.exports = {sendNotification, getMyNotification, markAsRead, markAllAsRead, deleteNotification, broadcast}
+module.exports = {sendNotification, getMyNotifications, markAsRead, markAllAsRead, deleteNotification, broadcast}
