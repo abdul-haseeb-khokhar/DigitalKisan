@@ -12,6 +12,6 @@ export const registerUser = async (payload: RegisterPayload): Promise<AuthRespon
 }
 
 export const getMe = async (): Promise<AuthResponse["user"]> => {
-    const response = await userClient.get<AuthResponse["user"]>("/auth/me");
+    const response = await userClient.get<AuthResponse["user"]>("/auth/get");
     return response.data
 }

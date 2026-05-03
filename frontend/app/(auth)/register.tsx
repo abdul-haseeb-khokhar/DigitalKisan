@@ -119,7 +119,7 @@ export default function RegisterScreen() {
 
           {/* Change Role */}
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push(`/(auth)/role-select`)}
             className="items-center mt-4 mb-10"
           >
             <Text className={`${cls.textMuted} text-sm`}>← Change role</Text>
