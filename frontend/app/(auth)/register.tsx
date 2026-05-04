@@ -18,7 +18,8 @@ export default function RegisterScreen() {
   const router = useRouter()
 
   const handleRegister = async () => {
-    if (!name || !phone || !password) return
+    console.log('register function in register.tsx called')
+    if (!name || !phone || !password ||!selectedRole) return
     await register({ name, email, phone, password, role: selectedRole,
         ...(email ? {email} : {})
      })

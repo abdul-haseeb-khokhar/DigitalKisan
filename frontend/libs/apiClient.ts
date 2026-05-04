@@ -2,13 +2,13 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URLS = {
-    user: `https://${process.env.EXPO_PUBLIC_IP}:5001/api`,
-    listing: `https://${process.env.EXPO_PUBLIC_IP}:5002/api`,
-    order: `https://${process.env.EXPO_PUBLIC_IP}:5003/api`,
-    payment: `https://${process.env.EXPO_PUBLIC_IP}:5004/api`,
-    transport: `https://${process.env.EXPO_PUBLIC_IP}:5005/api`,
-    notify: `https://${process.env.EXPO_PUBLIC_IP}:5006/api`,
-    admin: `https://${process.env.EXPO_PUBLIC_IP}:5007/api`,
+    user: `http://${process.env.EXPO_PUBLIC_IP}:5001/api`,
+    listing: `http://${process.env.EXPO_PUBLIC_IP}:5002/api`,
+    order: `http://${process.env.EXPO_PUBLIC_IP}:5003/api`,
+    payment: `http://${process.env.EXPO_PUBLIC_IP}:5004/api`,
+    transport: `http://${process.env.EXPO_PUBLIC_IP}:5005/api`,
+    notify: `http://${process.env.EXPO_PUBLIC_IP}:5006/api`,
+    admin: `http://${process.env.EXPO_PUBLIC_IP}:5007/api`,
 }
 
 const createClient = (baseURL: string) => {
@@ -24,7 +24,9 @@ const createClient = (baseURL: string) => {
     client.interceptors.response.use(
         (response) => response,
         (error) => {
+            console.log(error.message)
             const message = error.response?.data?.message || "Something went wrong";
+            console.log(message)
             return Promise.reject(new Error(message));
         }
     );

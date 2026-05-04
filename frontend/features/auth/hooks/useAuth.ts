@@ -25,6 +25,7 @@ export const useAuth = () => {
     };
 
     const register = async(payload: RegisterPayload): Promise<User |null> => {
+        console.log('register function of useAuth is called')
         setLoading(true)
         setError(null)
         try{

@@ -93,11 +93,6 @@ export default function RoleSelectionScreen() {
                                 <Text className={`${r.labelColor} text-lg font-bold`}>
                                     {r.label}
                                 </Text>
-                                <View className={`${r.badgeBg} px-2 py-0.5 rounded-full`}>
-                                    <Text className={`${r.badgeText} text-xs font-semibold`}>
-                                        {r.badgeLabel}
-                                    </Text>
-                                </View>
                             </View>
                             <Text className={`${r.taglineColor} text-sm leading-5`}>
                                 {r.tagline}

@@ -58,6 +58,7 @@ export const AuthProvider = ({children} : {children: React.ReactNode}) => {
     };
 
     const register = async (payload: RegisterPayload) => {
+        console.log('register function of AuthContext is called')
         const registeredUser = await authRegister(payload);
         if(registeredUser) setUser(registeredUser)
     };
